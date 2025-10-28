@@ -103,9 +103,6 @@ function M.set_tree(params)
   return true
 end
 
-return M
-
-
 -- Export full build XML
 function M.export_build_xml()
   if not build or not build.SaveDB then
@@ -356,3 +353,5 @@ function M.get_items()
   for slotName, _ in pairs(itemsTab.slots or {}) do add_slot(slotName) end
   return result
 end
+
+return M
