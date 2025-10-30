@@ -10,16 +10,25 @@ end
 -- JSON
 local ok_json, json = pcall(require, 'dkjson')
 if not ok_json then
-  local p = '../runtime/lua/dkjson.lua'
-  local ok2, mod = pcall(dofile, p)
-  if ok2 then json = mod else error('[API/TcpServer] dkjson not found') end
+  local base = rawget(_G, 'POB_SCRIPT_DIR') or '.'
+  local candidates = {
+    base .. '/runtime/lua/dkjson.lua',
+    base .. '/../runtime/lua/dkjson.lua',
+    'runtime/lua/dkjson.lua',
+    '../runtime/lua/dkjson.lua',
+  }
+  for _, p in ipairs(candidates) do
+    local ok2, mod = pcall(dofile, p)
+    if ok2 and type(mod) == 'table' then json = mod; ok_json = true; break end
+  end
+  if not ok_json then error('[API/TcpServer] dkjson not found') end
 end
 
 local function j_encode(tbl) return json.encode(tbl, { indent = false }) end
 local function j_decode(txt) return json.decode(txt) end
 
 -- Load common handlers
-local API = dofile('API/Handlers.lua')
+local API = require('API.Handlers')
 local handlers = API.handlers
 local function get_version_meta()
   return API.version_meta()

@@ -166,6 +166,35 @@ function require(name)
 	return l_require(name)
 end
 
+-- Determine script directory for robust relative loading
+local function get_script_dir()
+  local info = debug and debug.getinfo and debug.getinfo(1, 'S')
+  local src = info and info.source or ''
+  if type(src) == 'string' and src:sub(1,1) == '@' then
+    local path = src:sub(2)
+    return (path:gsub('[^/\\]+$', '')):gsub('[ /\\]$', '')
+  end
+  return ''
+end
+local POB_SCRIPT_DIR = get_script_dir()
+if POB_SCRIPT_DIR ~= '' then
+  _G.POB_SCRIPT_DIR = POB_SCRIPT_DIR
+  package.path = POB_SCRIPT_DIR .. '/?.lua;' .. POB_SCRIPT_DIR .. '/?/init.lua;' .. package.path
+end
+
+-- Allow CLI flag in addition to env var to start stdio server
+local function has_flag(flag)
+  if type(arg) ~= 'table' then return false end
+  for i = 1, #arg do if arg[i] == flag then return true end end
+  return false
+end
+
+-- If requested, start the stdio server immediately and exit
+if os.getenv('POB_API_STDIO') == '1' or has_flag('--stdio') then
+  local srvPath = (POB_SCRIPT_DIR ~= '' and (POB_SCRIPT_DIR .. '/API/Server.lua')) or 'API/Server.lua'
+  dofile(srvPath)
+  return
+end
 
 dofile("Launch.lua")
 

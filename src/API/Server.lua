@@ -1,12 +1,21 @@
 -- API/Server.lua
 -- Simple stdio JSON-RPC loop exposing a tiny PoB API
 
--- json loader with fallback to runtime path
+-- json loader with robust fallback to runtime path
 local ok, json = pcall(require, 'dkjson')
 if not ok then
-  local p = '../runtime/lua/dkjson.lua'
-  local ok2, mod = pcall(dofile, p)
-  if ok2 then json = mod else error('dkjson not found; ensure PoB runtime or dkjson is available') end
+  local base = rawget(_G, 'POB_SCRIPT_DIR') or '.'
+  local candidates = {
+    base .. '/runtime/lua/dkjson.lua',
+    base .. '/../runtime/lua/dkjson.lua',
+    'runtime/lua/dkjson.lua',
+    '../runtime/lua/dkjson.lua',
+  }
+  for _, p in ipairs(candidates) do
+    local ok2, mod = pcall(dofile, p)
+    if ok2 and type(mod) == 'table' then json = mod; ok = true; break end
+  end
+  if not ok then error('dkjson not found; ensure PoB runtime or dkjson is available') end
 end
 
 local function j_encode(tbl)
@@ -25,8 +34,8 @@ local function read_line()
   return io.read("*l")
 end
 
--- Load common handlers
-local API = dofile('API/Handlers.lua')
+-- Load common handlers via require for path robustness
+local API = require('API.Handlers')
 local handlers = API.handlers
 local function get_version_meta()
   return API.version_meta()
@@ -64,4 +73,3 @@ while true do
   end
   ::continue::
 end
-
