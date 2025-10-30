@@ -1,0 +1,67 @@
+-- API/Server.lua
+-- Simple stdio JSON-RPC loop exposing a tiny PoB API
+
+-- json loader with fallback to runtime path
+local ok, json = pcall(require, 'dkjson')
+if not ok then
+  local p = '../runtime/lua/dkjson.lua'
+  local ok2, mod = pcall(dofile, p)
+  if ok2 then json = mod else error('dkjson not found; ensure PoB runtime or dkjson is available') end
+end
+
+local function j_encode(tbl)
+  return json.encode(tbl, { indent = false })
+end
+local function j_decode(txt)
+  return json.decode(txt)
+end
+
+local function write_line(tbl)
+  io.write(j_encode(tbl), "\n")
+  io.flush()
+end
+
+local function read_line()
+  return io.read("*l")
+end
+
+-- Load common handlers
+local API = dofile('API/Handlers.lua')
+local handlers = API.handlers
+local function get_version_meta()
+  return API.version_meta()
+end
+
+-- Commands
+handlers.quit = function(params)
+  return { ok = true, quit = true }
+end
+
+-- Main loop
+write_line({ ok = true, ready = true, version = get_version_meta() })
+while true do
+  local line = read_line()
+  if not line then break end
+  if #line == 0 then goto continue end
+  local msg = j_decode(line)
+  if not msg or type(msg) ~= 'table' then
+    write_line({ ok = false, error = 'invalid json' })
+    goto continue
+  end
+  local action = msg.action
+  local params = msg.params or {}
+  local handler = handlers[action]
+  if not handler then
+    write_line({ ok = false, error = 'unknown action: '..tostring(action) })
+    goto continue
+  end
+  local ok2, res = pcall(handler, params)
+  if not ok2 then
+    write_line({ ok = false, error = 'exception: '..tostring(res) })
+  else
+    write_line(res)
+    if action == 'quit' then break end
+  end
+  ::continue::
+end
+

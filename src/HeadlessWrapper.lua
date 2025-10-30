@@ -204,3 +204,10 @@ function loadBuildFromJSON(getItemsJSON, getPassiveSkillsJSON)
 	-- You now have a build without a correct main skill selected, or any configuration options set
 	-- Good luck!
 end
+
+-- API server integration (env-gated)
+-- Set POB_API_STDIO=1 to start the stdio JSON-RPC server and exit
+if os.getenv('POB_API_STDIO') == '1' then
+  dofile('API/Server.lua')
+  return
+end
