@@ -25,10 +25,10 @@ do
       return false
     end
     if not BuildOps then
-      try(dir .. 'BuildOps.lua')
-      or try((rawget(_G,'POB_SCRIPT_DIR') or '.') .. '/API/BuildOps.lua')
-      or try('API/BuildOps.lua')
-      or try('src/API/BuildOps.lua')
+      local _ = try(dir .. 'BuildOps.lua')
+              or try((rawget(_G,'POB_SCRIPT_DIR') or '.') .. '/API/BuildOps.lua')
+              or try('API/BuildOps.lua')
+              or try('src/API/BuildOps.lua')
     end
     if not BuildOps then
       error('API/BuildOps.lua not found')
