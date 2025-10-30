@@ -177,6 +177,13 @@ mainObject.continuousIntegrationMode = os.getenv("CI")
 runCallback("OnInit")
 runCallback("OnFrame") -- Need at least one frame for everything to initialise
 
+-- API server integration (env-gated)
+-- Set POB_API_STDIO=1 to start the stdio JSON-RPC server and exit
+if os.getenv('POB_API_STDIO') == '1' then
+  dofile('API/Server.lua')
+  return
+end
+
 if mainObject.promptMsg then
 	-- Something went wrong during startup
 	print(mainObject.promptMsg)
@@ -203,11 +210,4 @@ function loadBuildFromJSON(getItemsJSON, getPassiveSkillsJSON)
 	build.importTab:ImportPassiveTreeAndJewels(getPassiveSkillsJSON, charData)
 	-- You now have a build without a correct main skill selected, or any configuration options set
 	-- Good luck!
-end
-
--- API server integration (env-gated)
--- Set POB_API_STDIO=1 to start the stdio JSON-RPC server and exit
-if os.getenv('POB_API_STDIO') == '1' then
-  dofile('API/Server.lua')
-  return
 end
