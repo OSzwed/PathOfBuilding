@@ -169,6 +169,13 @@ end
 
 dofile("Launch.lua")
 
+-- API server integration (env-gated)
+-- Start stdio server as early as possible to avoid long init timeouts
+if os.getenv('POB_API_STDIO') == '1' then
+  dofile('API/Server.lua')
+  return
+end
+
 -- Prevents loading of ModCache
 -- Allows running mod parsing related tests without pushing ModCache
 -- The CI env var will be true when run from github workflows but should be false for other tools using the headless wrapper 
@@ -176,13 +183,6 @@ mainObject.continuousIntegrationMode = os.getenv("CI")
 
 runCallback("OnInit")
 runCallback("OnFrame") -- Need at least one frame for everything to initialise
-
--- API server integration (env-gated)
--- Set POB_API_STDIO=1 to start the stdio JSON-RPC server and exit
-if os.getenv('POB_API_STDIO') == '1' then
-  dofile('API/Server.lua')
-  return
-end
 
 if mainObject.promptMsg then
 	-- Something went wrong during startup
