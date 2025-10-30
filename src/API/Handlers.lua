@@ -1,7 +1,21 @@
 -- API/Handlers.lua
 -- Shared JSON-RPC handlers for PoB API (transport-agnostic)
 
-local BuildOps = dofile('API/BuildOps.lua')
+local ok_ops, BuildOps = pcall(require, 'API.BuildOps')
+if not ok_ops then
+  local base = rawget(_G, 'POB_SCRIPT_DIR') or '.'
+  local candidates = {
+    base .. '/API/BuildOps.lua',
+    base .. '/../src/API/BuildOps.lua',
+    'API/BuildOps.lua',
+    'src/API/BuildOps.lua',
+  }
+  for _, p in ipairs(candidates) do
+    local ok2, mod = pcall(dofile, p)
+    if ok2 then BuildOps = mod; ok_ops = true; break end
+  end
+  if not ok_ops then error('API/BuildOps.lua not found') end
+end
 
 local function version_meta()
   return {
@@ -141,4 +155,3 @@ return {
   handlers = handlers,
   version_meta = version_meta,
 }
-

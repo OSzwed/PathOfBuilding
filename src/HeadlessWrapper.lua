@@ -177,19 +177,24 @@ local function get_script_dir()
   return ''
 end
 local POB_SCRIPT_DIR = get_script_dir()
--- If launched from repo root (e.g., 'luajit src/HeadlessWrapper.lua' vs 'luajit HeadlessWrapper.lua'),
--- detect 'src' directory and use that as script dir for module lookup.
+-- If script dir unknown (e.g., launched as 'luajit HeadlessWrapper.lua'), fall back:
 if POB_SCRIPT_DIR == '' then
-  local f = io.open('src/HeadlessWrapper.lua', 'r')
-  if f then f:close(); POB_SCRIPT_DIR = 'src' end
+  -- Case 1: running inside src
+  local f1 = io.open('HeadlessWrapper.lua', 'r')
+  if f1 then f1:close(); POB_SCRIPT_DIR = '.' end
+end
+if POB_SCRIPT_DIR == '' then
+  -- Case 2: running from repo root
+  local f2 = io.open('src/HeadlessWrapper.lua', 'r')
+  if f2 then f2:close(); POB_SCRIPT_DIR = 'src' end
 end
 if POB_SCRIPT_DIR ~= '' then
   _G.POB_SCRIPT_DIR = POB_SCRIPT_DIR
-  package.path = table.concat({
-    POB_SCRIPT_DIR .. '/?.lua',
-    POB_SCRIPT_DIR .. '/?/init.lua',
-    package.path,
-  }, ';')
+  local pathSegs = {}
+  table.insert(pathSegs, POB_SCRIPT_DIR .. '/?.lua')
+  table.insert(pathSegs, POB_SCRIPT_DIR .. '/?/init.lua')
+  table.insert(pathSegs, package.path)
+  package.path = table.concat(pathSegs, ';')
   -- Add runtime lua path so modules like 'xml' resolve without external LUA_PATH
   local runtimeCandidates = {
     POB_SCRIPT_DIR .. '/runtime/lua',
