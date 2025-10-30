@@ -177,9 +177,37 @@ local function get_script_dir()
   return ''
 end
 local POB_SCRIPT_DIR = get_script_dir()
+-- If launched from repo root (e.g., 'luajit src/HeadlessWrapper.lua' vs 'luajit HeadlessWrapper.lua'),
+-- detect 'src' directory and use that as script dir for module lookup.
+if POB_SCRIPT_DIR == '' then
+  local f = io.open('src/HeadlessWrapper.lua', 'r')
+  if f then f:close(); POB_SCRIPT_DIR = 'src' end
+end
 if POB_SCRIPT_DIR ~= '' then
   _G.POB_SCRIPT_DIR = POB_SCRIPT_DIR
-  package.path = POB_SCRIPT_DIR .. '/?.lua;' .. POB_SCRIPT_DIR .. '/?/init.lua;' .. package.path
+  package.path = table.concat({
+    POB_SCRIPT_DIR .. '/?.lua',
+    POB_SCRIPT_DIR .. '/?/init.lua',
+    package.path,
+  }, ';')
+  -- Add runtime lua path so modules like 'xml' resolve without external LUA_PATH
+  local runtimeCandidates = {
+    POB_SCRIPT_DIR .. '/runtime/lua',
+    POB_SCRIPT_DIR .. '/../runtime/lua',
+    'runtime/lua',
+    '../runtime/lua',
+  }
+  for _, rp in ipairs(runtimeCandidates) do
+    local test = io.open(rp .. '/xml.lua', 'r')
+    if test then
+      test:close()
+      local seg = rp .. '/?.lua;"' .. rp .. '/?/init.lua"'
+      if not string.find(package.path, rp .. '/?.lua', 1, true) then
+        package.path = rp .. '/?.lua;' .. rp .. '/?/init.lua;' .. package.path
+      end
+      break
+    end
+  end
 end
 
 -- Allow CLI flag in addition to env var to start stdio server
@@ -191,6 +219,25 @@ end
 
 -- If requested, start the stdio server immediately and exit
 if os.getenv('POB_API_STDIO') == '1' or has_flag('--stdio') then
+  -- Provide utf8 fallback if not present to avoid requiring external luautf8
+  if type(_G.utf8) ~= 'table' then
+    local ok_u, mod = pcall(require, 'utf8')
+    if not ok_u or type(mod) ~= 'table' then
+      local stubCandidates = {
+        (POB_SCRIPT_DIR ~= '' and (POB_SCRIPT_DIR .. '/utf8.lua')) or nil,
+        (POB_SCRIPT_DIR ~= '' and (POB_SCRIPT_DIR .. '/lua-utf8.lua')) or nil,
+        'src/utf8.lua', 'src/lua-utf8.lua'
+      }
+      for _, sp in ipairs(stubCandidates) do
+        if sp then
+          local ok2, stub = pcall(dofile, sp)
+          if ok2 and type(stub) == 'table' then _G.utf8 = stub; break end
+        end
+      end
+    else
+      _G.utf8 = mod
+    end
+  end
   local srvPath = (POB_SCRIPT_DIR ~= '' and (POB_SCRIPT_DIR .. '/API/Server.lua')) or 'API/Server.lua'
   dofile(srvPath)
   return
