@@ -250,13 +250,6 @@ end
 
 dofile("Launch.lua")
 
--- API server integration (env-gated)
--- Start stdio server as early as possible to avoid long init timeouts
-if os.getenv('POB_API_STDIO') == '1' then
-  dofile('API/Server.lua')
-  return
-end
-
 -- Prevents loading of ModCache
 -- Allows running mod parsing related tests without pushing ModCache
 -- The CI env var will be true when run from github workflows but should be false for other tools using the headless wrapper 
