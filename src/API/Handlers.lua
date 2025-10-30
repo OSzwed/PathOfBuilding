@@ -1,20 +1,39 @@
 -- API/Handlers.lua
 -- Shared JSON-RPC handlers for PoB API (transport-agnostic)
 
-local ok_ops, BuildOps = pcall(require, 'API.BuildOps')
-if not ok_ops then
-  local base = rawget(_G, 'POB_SCRIPT_DIR') or '.'
-  local candidates = {
-    base .. '/API/BuildOps.lua',
-    base .. '/../src/API/BuildOps.lua',
-    'API/BuildOps.lua',
-    'src/API/BuildOps.lua',
-  }
-  for _, p in ipairs(candidates) do
-    local ok2, mod = pcall(dofile, p)
-    if ok2 then BuildOps = mod; ok_ops = true; break end
+-- Resolve BuildOps reliably regardless of CWD
+local BuildOps
+do
+  local ok_ops, mod = pcall(require, 'API.BuildOps')
+  if ok_ops and mod then
+    BuildOps = mod
+  else
+    -- Try path relative to this file's directory
+    local dir = ''
+    local info = debug and debug.getinfo and debug.getinfo(1, 'S')
+    local src = info and info.source or ''
+    if type(src) == 'string' and src:sub(1,1) == '@' then
+      local p = src:sub(2)
+      dir = (p:gsub('[^/\\]+$', ''))
+    end
+    local tried = {}
+    local function try(p)
+      if p then table.insert(tried, p) end
+      if not p then return false end
+      local ok2, m = pcall(dofile, p)
+      if ok2 and m then BuildOps = m; return true end
+      return false
+    end
+    if not BuildOps then
+      try(dir .. 'BuildOps.lua')
+      or try((rawget(_G,'POB_SCRIPT_DIR') or '.') .. '/API/BuildOps.lua')
+      or try('API/BuildOps.lua')
+      or try('src/API/BuildOps.lua')
+    end
+    if not BuildOps then
+      error('API/BuildOps.lua not found')
+    end
   end
-  if not ok_ops then error('API/BuildOps.lua not found') end
 end
 
 local function version_meta()
