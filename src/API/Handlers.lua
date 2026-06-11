@@ -241,6 +241,19 @@ handlers.search_nodes = function(params)
   return { ok = true, results = res }
 end
 
+handlers.save_build = function(params)
+  if not params or type(params.path) ~= 'string' then
+    return { ok = false, error = 'missing path' }
+  end
+  local xml, err = BuildOps.export_build_xml()
+  if not xml then return { ok = false, error = err or 'failed to export xml' } end
+  local f, ferr = io.open(params.path, 'w')
+  if not f then return { ok = false, error = 'cannot open file: ' .. tostring(ferr) } end
+  f:write(xml)
+  f:close()
+  return { ok = true, path = params.path }
+end
+
 return {
   handlers = handlers,
   version_meta = version_meta,

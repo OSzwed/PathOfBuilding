@@ -114,6 +114,13 @@ function M.export_build_xml()
   if not build or not build.SaveDB then
     return nil, 'build not initialized'
   end
+  -- Run a frame to ensure all savers (Skills, Items, Tree, etc.) are fully initialized
+  if _G.runCallback then
+    pcall(_G.runCallback, "OnFrame")
+  end
+  if not build.savers then
+    return nil, 'build savers not initialized - build may not be fully loaded'
+  end
   local xml = build:SaveDB('api-export')
   if not xml then return nil, 'failed to compose xml' end
   return xml

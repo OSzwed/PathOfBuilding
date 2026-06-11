@@ -280,6 +280,7 @@ if os.getenv('POB_API_STDIO') == '1' or has_flag('--stdio') then
     runCallback("OnFrame")
   end
   _G.newBuild = newBuild
+  _G.runCallback = runCallback
   _G.loadBuildFromXML = loadBuildFromXML
   _G.build = mainObject.main.modes["BUILD"]
 
