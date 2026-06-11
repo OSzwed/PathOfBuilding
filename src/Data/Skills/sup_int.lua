@@ -6271,7 +6271,6 @@ skills["SupportGreaterSpellEcho"] = {
 	excludeSkillTypes = { SkillType.Brand, SkillType.SummonsTotem, SkillType.Trapped, SkillType.RemoteMined, SkillType.Triggered, SkillType.HasReservation, SkillType.Vaal, SkillType.Instant, SkillType.NonRepeatable, SkillType.CreatesMinion, SkillType.NOT, SkillType.AND, },
 	plusVersionOf = "SupportSpellEcho",
 	statDescriptionScope = "gem_stat_descriptions",
-	fromItem = true,
 	statMap = {
 		["support_greater_spell_echo_spell_damage_+%_final_per_repeat"] = {
 			mod("RepeatPerRepeatDamage", "MORE", nil, 0, 0, { type = "Condition", var = "HaveBladeVortex", neg = true }, { type = "Condition", var = "CastOnFrostbolt", neg = true }, { type = "Condition", varList = {"averageRepeat", "alwaysFinalRepeat"} }),
@@ -6381,9 +6380,6 @@ skills["SupportSummonPhantasm"] = {
 		"SummonedPhantasm"
 	},
 	statMap = {
-		["base_number_of_support_ghosts_allowed"] = {
-			mod("ActivePhantasmLimit", "BASE", nil),
-		},
 		["phantasm_minimum_added_physical_damage_to_grant"] = {
 			mod("PhysicalMin", "BASE", nil, ModFlag.Spell, 0, { type = "PerStat", stat = "ActivePhantasmLimit" }, { type = "GlobalEffect", effectType = "Buff", effectName = "Phantasmal Might", effectCond = "PhantasmalMight", allowTotemBuff = true })
 		},
